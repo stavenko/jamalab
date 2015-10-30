@@ -1,0 +1,46 @@
+{
+  "name": "jamalab",
+  "version": "0.0.0",
+  "description": "Javascript application for math culculations and plotting",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/stavenko/jamalab.git"
+  },
+  "keywords": [
+    "math",
+    "javascript"
+  ],
+  "author": "Vasiliy G. Stavenko",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/stavenko/jamalab/issues"
+  },
+  "dependencies": {
+    "body-parser": "^1.14.1",
+    "brace": "^0.5.1",
+    "cookie-parser": "^1.4.0",
+    "cookie-session": "^2.0.0-alpha.1",
+    "express": "^4.13.3",
+    "express-paginate": "0.0.9",
+    "math": "0.0.3",
+    "mathjs": "^2.4.1",
+    "moment": "^2.10.6",
+    "mongoose": "^4.2.3",
+    "react": "^0.14.1",
+    "react-ace": "^2.6.0",
+    "react-dom": "^0.14.1",
+    "underscore": "^1.8.3"
+  },
+  "devDependencies": {
+    "bower": "^1.6.5",
+    "gulp": "^3.9.0",
+    "gulp-babel": "^5.3.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-sourcemaps": "^1.6.0",
+    "jsx-loader": "^0.13.2"
+  }
+}

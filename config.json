@@ -1,0 +1,13 @@
+{
+    "default":{
+        "db":{
+            "url":"mongodb://localhost/jamalab"
+        }
+    },
+    "test":{
+        "db":{
+            "url":"mongodb://localhost/jamalab_test"
+        }
+    }
+
+}

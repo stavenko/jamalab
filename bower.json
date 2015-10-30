@@ -1,0 +1,29 @@
+{
+  "name": "jamalab",
+  "description": "Javascript application for math culculations and plotting",
+  "main": "index.js",
+  "authors": [
+    "Vasiliy G. Stavenko"
+  ],
+  "license": "ISC",
+  "keywords": [
+    "math",
+    "javascript"
+  ],
+  "homepage": "https://github.com/stavenko/jamalab",
+  "moduleType": [],
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "~3.3.5",
+    "react": "~0.14.1",
+    "moment": "~2.10.6",
+    "jshashes": "~1.0.5"
+  }
+}
