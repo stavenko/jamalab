@@ -172,12 +172,14 @@
 	      for(var i =0; i < rows.length; i++){
 	        var row = rows[i];
 	        var counter = 0;
+	        var fn = row.data;
+	        if(typeof fn !== 'function')
+	          fn = utils.arrayGetter(row.data, opts.start, opts.end);
 	        for(var x = opts.start; x < opts.end; x+= opts.step){
 	          row.x[counter] = x;
 
 	          try{
-	            row.y[counter] = row.data(x);
-	            if(counter > 95){ console.log(row.y[counter], row.x[counter]); }
+	            row.y[counter] = fn(x);
 	          }catch(e){
 	            console.error("Fail", e.message);
 	          }
@@ -68336,6 +68338,31 @@
 	  log:math.log,
 	  fft:fft.fft,
 	  ifft:fft.ifft,
+
+	  array:function(f, from, to, step){
+	    from = from || 0;
+	    to   = to || 100;
+	    step = step || 1;
+	    var arr = [];
+	    for(var i = from; i <= to; i+=step)
+	      arr.push(f(i));
+	    arr.limits={
+	      from:from,
+	      to:to,
+	      step:step
+	    }
+	    return arr;
+	  },
+
+	  arrayGetter(a, starts, ends){
+	    return function(i){
+	      var normalizedIx = (i-starts-1) / (ends-starts);
+	      var tx = Math.floor(normalizedIx * (a.length))-1 + starts;
+	      if(tx<0 || tx >= a.length) return 0;
+	      return a[tx];
+	    }
+	  },
+
 
 	  get:function (ctx, path){
 	    path = path.split('.');

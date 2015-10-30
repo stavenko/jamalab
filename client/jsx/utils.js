@@ -17,6 +17,31 @@ module.exports = {
   fft:fft.fft,
   ifft:fft.ifft,
 
+  array:function(f, from, to, step){
+    from = from || 0;
+    to   = to || 100;
+    step = step || 1;
+    var arr = [];
+    for(var i = from; i <= to; i+=step)
+      arr.push(f(i));
+    arr.limits={
+      from:from,
+      to:to,
+      step:step
+    }
+    return arr;
+  },
+
+  arrayGetter(a, starts, ends){
+    return function(i){
+      var normalizedIx = (i-starts) / (ends-starts);
+      var tx = Math.floor(normalizedIx * (a.length)) + starts;
+      if(tx<0 || tx >= a.length) return 0;
+      return a[tx];
+    }
+  },
+
+
   get:function (ctx, path){
     path = path.split('.');
     var o = ctx;

@@ -116,12 +116,14 @@ var SectionsRender = React.createClass({
       for(var i =0; i < rows.length; i++){
         var row = rows[i];
         var counter = 0;
+        var fn = row.data;
+        if(typeof fn !== 'function')
+          fn = utils.arrayGetter(row.data, opts.start, opts.end);
         for(var x = opts.start; x < opts.end; x+= opts.step){
           row.x[counter] = x;
 
           try{
-            row.y[counter] = row.data(x);
-            if(counter > 95){ console.log(row.y[counter], row.x[counter]); }
+            row.y[counter] = fn(x);
           }catch(e){
             console.error("Fail", e.message);
           }
