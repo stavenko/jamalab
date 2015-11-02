@@ -13,8 +13,58 @@ var get = utils.get;
 var set = utils.set;
 var emit = dom.emit;
 
-require('brace/mode/javascript')
-require('brace/theme/chrome')
+require('brace/mode/javascript');
+require('brace/theme/chrome');
+var Test1 = 
+'var section = Section("First");\n'
++'section.handle("k");\n'
++'function b (t){\n'
++'  return section.k * t*t;\n'
++'}\n'
++'\n'
++'function a (t){\n'
++'  return section.k*abs(sqrt(t));\n'
++'}\n'
++'var arr = array([1,0,1,0, 1,0,1], -2,2);\n'
++'var j = sqrt(-1);\n'
++'var f = 0.1;\n'
++'var T = 2/f;\n'
++'var PI = Math.PI\n'
++'function s(t){\n'
++'    return {re:cos(f*PI*t),im:0, isComplex:true};\n'
++'    //return mul( exp(mul(j,f,t,PI,2)), 20);\n'
++'}\n'
++'\n'
++'function re(f){return function(i){ return f(i).re; }};\n'
++'function absf(f){ return function(i){ return abs(f(i)); }};\n'
++'var ff = fft(s,{from:0,to:2*T,amount:5});\n'
++'var iff = ifft(ff,{from:0,to:2*T,amount:5});\n'
++'\n'
++'section.plot([re(s),re(ff), absf(iff)], {\n'
++'   start:-5*T/2, \n'
++'   end:5*T/2, \n'
++'   step:0.1\n'
++'});\n';
+
+var TestScript = Test1; ''
+        +'var section = Section("First");\n'
+        +'section.handle("k");\n'
+                    +'function b (t){\n'
+                    +'  return section.k * t*t;\n'
+                    +'}\n'
+                    +'\n'
+                    +'function a (t){\n'
+                    +'  return section.k*abs(sqrt(t));\n'
+                    +'}\n'
+                    +'var arr = array([1,0,1,0, 1,0,1], -2,2);'
+                    +'var j = sqrt(-1);\n'
+                    +'function s(t){\n'
+                    +'    return mul( exp(mul(j,10,t)), 10);\n'
+                    +'}\n'
+                    +'function re(f){ return function(i){ return f(i).re; }};\n'
+                    +'var ff = fft(s,{from:-1,to:1,amount:3});\n'
+                    +'\n'
+                    +'section.plot([re(s),re(ff)], {start:-1, end:1, step:0.01 });\n';
 
 
 
@@ -38,7 +88,6 @@ var Handle = React.createClass({
   },
 
   render: function(){
-    console.log(this.props);
     return <div  className='form-group'>
       <label className='col-xs-3'> {this.props.handleName} </label>
       <div className='col-xs-2'> 
@@ -59,7 +108,6 @@ var SectionsRender = React.createClass({
     set(this.state,  'computationState.sections.'
         + e.detail.sectionName + '.handles.'
         + e.detail.handle + '.value', parseFloat(e.detail.value));
-        // console.log(this.state.computationState.sections
     this.renderValues(e.sectionName);
           
   },
@@ -117,13 +165,13 @@ var SectionsRender = React.createClass({
         var row = rows[i];
         var counter = 0;
         var fn = row.data;
-        if(typeof fn !== 'function')
-          fn = utils.arrayGetter(row.data, opts.start, opts.end);
+        //if(typeof fn !== 'function')
+        //  fn = utils.arrayGetter(row.data, opts.start, opts.end);
         for(var x = opts.start; x < opts.end; x+= opts.step){
           row.x[counter] = x;
 
           try{
-            row.y[counter] = fn(x);
+            row.y[counter] = fn(x, opts);
           }catch(e){
             console.error("Fail", e.message);
           }
@@ -277,18 +325,7 @@ var Main = React.createClass({
       y.push(i*i);
     }
     return {
-      javascript: ''
-        +'var section = Section("First");\n'
-        +'section.handle("k");\n'
-                    +'function b (t){\n'
-                    +'  return section.k * t*t;\n'
-                    +'}\n'
-                    +'\n'
-                    +'function a (t){\n'
-                    +'  return section.k*Math.sqrt(t);\n'
-                    +'}\n'
-                    +'\n'
-                    +'section.plot([a,b]);\n',
+      javascript: TestScript,
       arrays: [{
         x:x, y:y, label:'sqr'
       }]

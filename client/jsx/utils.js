@@ -12,30 +12,28 @@ module.exports = {
   acos:math.acos,
   asin:math.asin,
   atan2:math.atan,
-  exp:math.exp,
   log:math.log,
   fft:fft.fft,
   ifft:fft.ifft,
 
-  array:function(f, from, to, step){
-    from = from || 0;
-    to   = to || 100;
-    step = step || 1;
-    var arr = [];
-    for(var i = from; i <= to; i+=step)
-      arr.push(f(i));
-    arr.limits={
-      from:from,
-      to:to,
-      step:step
+  mul: function(){
+    var acc = arguments[0];
+    for(var i =1; i< arguments.length; i++){
+      // console.log('M', acc, arguments[i]);
+      acc = math.multiply(acc, arguments[i]);
     }
-    return arr;
+    return acc;
   },
 
-  arrayGetter(a, starts, ends){
-    return function(i){
-      var normalizedIx = (i-starts) / (ends-starts);
-      var tx = Math.floor(normalizedIx * (a.length)) + starts;
+  add:math.add,
+  exp:math.exp,
+
+  array(a, starts, ends){
+    return function(i, opts){
+      if(!(i >= starts && i <= ends)) return 0;
+      var normalizedIx = (i - starts) / (ends - starts);
+      var tx = Math.floor(normalizedIx * (a.length)); 
+      console.log("arr", i, normalizedIx);
       if(tx<0 || tx >= a.length) return 0;
       return a[tx];
     }
