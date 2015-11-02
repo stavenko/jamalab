@@ -1,6 +1,7 @@
 var _ = require('underscore');
 var math = require('mathjs');
 var fft = require('./fft.js');
+
 module.exports = {
   extend:_.extend,
   sqrt:math.sqrt,
@@ -15,17 +16,12 @@ module.exports = {
   log:math.log,
   fft:fft.fft,
   ifft:fft.ifft,
+  complex:math.complex,
 
-  mul: function(){
-    var acc = arguments[0];
-    for(var i =1; i< arguments.length; i++){
-      // console.log('M', acc, arguments[i]);
-      acc = math.multiply(acc, arguments[i]);
-    }
-    return acc;
-  },
-
-  add:math.add,
+  mul: _multiparamOp(math.multiply),
+  div: _multiparamOp(math.divide),
+  sub: _multiparamOp(math.subtract),
+  add:_multiparamOp(math.add),
   exp:math.exp,
 
   array(a, starts, ends){
@@ -33,7 +29,6 @@ module.exports = {
       if(!(i >= starts && i <= ends)) return 0;
       var normalizedIx = (i - starts) / (ends - starts);
       var tx = Math.floor(normalizedIx * (a.length)); 
-      console.log("arr", i, normalizedIx);
       if(tx<0 || tx >= a.length) return 0;
       return a[tx];
     }
@@ -59,3 +54,14 @@ module.exports = {
     o[path[path.length-1]] = v;
   }
 }
+
+function _multiparamOp(f){
+  return function(){
+    var acc = arguments[0];
+
+    for(var i =1; i< arguments.length; i++){
+      acc = f(acc, arguments[i]);
+    }
+    return acc;
+  }
+};

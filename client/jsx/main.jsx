@@ -121,7 +121,6 @@ var SectionsRender = React.createClass({
   },
 
   sourceChanged: function(e){
-    console.log("sourceChanged");
     this.setState({ source: e.detail });
   },
 
@@ -235,7 +234,6 @@ var SectionsRender = React.createClass({
           for(var i =0; i < rows.length; i++){
             thisPlot.rows[i] = { label: rows[i].label || "Plot" + i, x:[], y:[], data:rows[i] };
           }
-          console.log(this.plots);
         }
       }
       return state.sections[n];
@@ -276,7 +274,6 @@ var SectionsRender = React.createClass({
   },
 
   renderSection(sectionLabel, section){
-    console.log(section);
     return <div className='row' key={'section+' + sectionLabel}>
       <div className='col-xs-12'>
         <h3>{ sectionLabel }</h3>
@@ -299,7 +296,6 @@ var SectionsRender = React.createClass({
 
   render: function(){
     var javascript = this.state.source;
-    console.log('PPPP');
     if(this.parseScript(javascript))
       this.renderValues();
     return <div>
@@ -335,7 +331,6 @@ var Main = React.createClass({
   render: function(){
     var javascript = this.state.javascript;   
 
-    //console.log("JS", javascript);
     return <div className='container-fluid'>
 
       <div className = 'row'>

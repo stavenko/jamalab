@@ -6,7 +6,6 @@ var SQRT1_2 = Math.SQRT1_2;
 
 
 function fftIterativeFunction(f, opts , isInverse) {
-  console.log("FFT");
   var from = opts.from;
   var to = opts.to;
   var amount = mathjs.pow(2, opts.amount);
@@ -15,7 +14,6 @@ function fftIterativeFunction(f, opts , isInverse) {
     return NaN;
   }
   var step = (to-from)/amount;
-  console.log(step);
 
   var
     n = amount,
@@ -47,7 +45,6 @@ function fftIterativeFunction(f, opts , isInverse) {
     if(!(i >= from && i <= to)) return 0;
     var normalizedIx = (i - from) / (to - from);
     var tx = Math.floor(normalizedIx * (output.length)); 
-    // console.log("arr", i, normalizedIx);
     if(tx<0 || tx >= output.length) return 0;
     return output[tx];
   }
@@ -101,10 +98,10 @@ function fftIterative(input, isInverse) {
   //output_r = output.real
   //output_i = output.imag
   
-  output = []
-  input.forEach(function(i){output.push(i)});
+  output = [];
+  input.forEach(function(i){output.push(mathjs.complex(i.re, i.im)); });
   if(output.length % 2)
-    output.push({re:0, im:0});
+    output.push(mathjs.complex(0,0));
 
   // Loops go like O(n log n):
   //   width ~ log n; i,j ~ n
@@ -138,23 +135,124 @@ function fftIterative(input, isInverse) {
   return output;
 }
 
-module.exports.fft = function(input, opts) { return fftIterativeFunction(input, opts, false);}
-module.exports.ifft = function(input, opts) { return fftIterativeFunction(input, opts, true);}
+function transformRadix2(input, isInverse) { //real, imag) {
+    // Initialization
+    // if (real.length != imag.length)
+        // throw "Mismatched lengths";
+    var n = input.length;
+    if (n == 1)  // Trivial transform
+        return;
+    var levels = -1;
+    for (var i = 0; i < 32; i++) {
+        if (1 << i == n)
+            levels = i;  // Equal to log2(n)
+    }
+    if (levels == -1)
+        throw new Error("Length is not a power of 2");
+    var cosTable = new Array(n / 2);
+    var sinTable = new Array(n / 2);
+    for (var i = 0; i < n / 2; i++) {
+        cosTable[i] = Math.cos(2 * Math.PI * i / n);
+        sinTable[i] = Math.sin(2 * Math.PI * i / n);
+    }
+    var re = isInverse?'im':'re';
+    var im = isInverse?'re':'im';
+    // Bit-reversed addressing permutation
+    for (var i = 0; i < n; i++) {
+        var j = reverseBits(i, levels);
+        if (j > i) {
+          var temp = input[i];
+          input[i] = input[j];
+          input[j] = temp;
+            //var temp = real[i];
+            //real[i] = real[j];
+            //real[j] = temp;
+            //temp = imag[i];
+            //imag[i] = imag[j];
+            //imag[j] = temp;
+        }
+    }
+    
+    // Cooley-Tukey decimation-in-time radix-2 FFT
+    return function(){
+      for (var size = 2; size <= n; size *= 2) {
+        var halfsize = size / 2;
+        var tablestep = n / size;
+        for (var i = 0; i < n; i += size) {
+          for (var j = i, k = 0; j < i + halfsize; j++, k += tablestep) {
+            var tpre =  real(j+halfsize) * cosTable[k] + imag(j+halfsize) * sinTable[k];
+            var tpim = -real(j+halfsize) * sinTable[k] + imag(j+halfsize) * cosTable[k];
+            var o = complex( real(j) - tpre, imag(j) - tpim );
+            input[j + halfsize] = o
+            input[j][re] += tpre;
+            input[j][im] += tpim;
+          }
+        }
+      }
+    }
 
-
-function f(t){
-  return { re: mathjs.sin(t), im:0, isComplex:true };
-
+    function complex(re, im){
+      if(isInverse)
+        return mathjs.complex(im, re);
+      else
+        return mathjs.complex(re, im);
+    }
+    function real(i){
+      return input[i][re];
+    }
+    function imag(i){
+      return input[i][im];
+    }
+    
+    // Returns the integer whose value is the reverse of the lowest 'bits' bits of the integer 'x'.
+    function reverseBits(x, bits) {
+        var y = 0;
+        for (var i = 0; i < bits; i++) {
+            y = (y << 1) | (x & 1);
+            x >>>= 1;
+        }
+        return y;
+    }
 }
-var arr = [];
-var from =0;
-var to = 4*Math.PI;
-var amount = 64;
-var step = (to-from)/amount; 
-for(var i = 0; i < amount; i++){
-  var a = i*step;
-  arr.push(f(a));
+
+function FFT(f, opts, isReverse){
+  var from = opts.from;
+  var to = opts.to;
+  var amount = mathjs.pow(2, opts.amount);
+  var calculated = false;
+  if(from > to) return function(){
+    console.warn("Incorrect range from:", from, "To", to);
+    return NaN;
+  }
+  var step = (to-from)/amount;
+
+  var output = [];
+  for(var i = from; i < to; i+=step){
+    var v = f(i);
+    if(typeof(v) == 'number') v = mathjs.complex(v,0);
+    output.push(mathjs.complex(v.re, v.im));
+  }
+
+  var generate = transformRadix2(output, isReverse);
+  // Loops go like O(n log n):
+  //   width ~ log n; i,j ~ n
+  width = 1;
+  return function(i, opts){
+    if(!calculated) {
+      generate();
+      calculated = true;
+    }
+    if(!(i >= from && i <= to)) return 0;
+    var normalizedIx = (i - from) / (to - from);
+    var tx = Math.floor(normalizedIx * (output.length)); 
+    if(tx<0 || tx >= output.length) return 0;
+    return isReverse?mathjs.divide(output[tx], amount): output[tx];
+  }
 }
-console.log(arr,"\n\n\n", fftIterative(arr, false));
+
+module.exports.fft = function(input, opts) { return FFT(input, opts, false);}
+
+module.exports.ifft = function(input, opts) { return FFT(input, opts, true);}
+
 
 
