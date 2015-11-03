@@ -215,10 +215,11 @@ function transformRadix2(input, isInverse) { //real, imag) {
     }
 }
 
-function FFT(f, opts, isReverse){
+function FFT(f, opts, isReverse, state){
   var from = opts.from;
   var to = opts.to;
   var amount = mathjs.pow(2, opts.amount);
+  var shift = opts.shift || 0.0;
   var calculated = false;
   if(from > to) return function(){
     console.warn("Incorrect range from:", from, "To", to);
@@ -231,6 +232,7 @@ function FFT(f, opts, isReverse){
     var v = f(i);
     if(typeof(v) == 'number') v = mathjs.complex(v,0);
     output.push(mathjs.complex(v.re, v.im));
+    if(output.length == amount) break;
   }
 
   var generate = transformRadix2(output, isReverse);
@@ -238,21 +240,31 @@ function FFT(f, opts, isReverse){
   //   width ~ log n; i,j ~ n
   width = 1;
   return function(i, opts){
-    if(!calculated) {
+    opts = opts || {};
+    if(!calculated || state.arraysInvalid) {
       generate();
       calculated = true;
     }
     if(!(i >= from && i <= to)) return 0;
     var normalizedIx = (i - from) / (to - from);
+    normalizedIx = mathjs.mod(normalizedIx + shift, 1.0);
     var tx = Math.floor(normalizedIx * (output.length)); 
     if(tx<0 || tx >= output.length) return 0;
     return isReverse?mathjs.divide(output[tx], amount): output[tx];
   }
 }
 
-module.exports.fft = function(input, opts) { return FFT(input, opts, false);}
+module.exports.fft = function(state){
+  return function(input, opts) { 
+    return FFT(input, opts, false, state);
+  }
+}
 
-module.exports.ifft = function(input, opts) { return FFT(input, opts, true);}
+module.exports.ifft = function(state){
+  return function(input, opts) { 
+    return FFT(input, opts, true, state);
+  }
+}
 
 
 

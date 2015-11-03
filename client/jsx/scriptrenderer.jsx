@@ -15,6 +15,9 @@ var SectionsRender = React.createClass({
     set(this.state,  'computationState.sections.'
         + e.detail.sectionName + '.handles.'
         + e.detail.handle + '.value', parseFloat(e.detail.value));
+    console.log(this.state.computationState);
+    this.state.computationState.arraysInvalid = true;
+    console.log(this.state.computationState);
     this.renderValues(e.sectionName);
           
   },
@@ -40,16 +43,16 @@ var SectionsRender = React.createClass({
   renderValues(name, plotId) {
     var plots = get(this.state, 'computationState.sections.'+name+'.plots') ;
     if(plots)
-      if(plotId) return renderPlot(plots[plotId]);
-      else return renderPlots(plots);
+      if(plotId) return renderPlot.bind(this)(plots[plotId]);
+      else return renderPlots.bind(this)(plots);
     for(var k in this.state.computationState.sections){
       var section = this.state.computationState.sections[k];
-      renderPlots(section.plots);
+      renderPlots.bind(this)(section.plots);
     }
 
     function renderPlots(plots){
       for(var j =0; j < plots.length; j++){
-        renderPlot(plots[j]);
+        renderPlot.bind(this)(plots[j]);
       }
     }
 
@@ -66,16 +69,14 @@ var SectionsRender = React.createClass({
         console.warn('Too big amount of steps');
         return;
       }
+      opts.arraysInvalid = this.state.computationState.arraysInvalid;
 
       for(var i =0; i < rows.length; i++){
         var row = rows[i];
         var counter = 0;
         var fn = row.data;
-        //if(typeof fn !== 'function')
-        //  fn = utils.arrayGetter(row.data, opts.start, opts.end);
         for(var x = opts.start; x < opts.end; x+= opts.step){
           row.x[counter] = x;
-
           try{
             row.y[counter] = fn(x, opts);
           }catch(e){
@@ -84,14 +85,18 @@ var SectionsRender = React.createClass({
           counter ++;
         }
       }
+      this.state.computationState.arraysInvalid = false;
       emit('redraw-graph');
     }
   },
 
   parseScript: function(javascript){
     var fns = [];
+    var stateful = ['fft','ifft', 'array'];
     for(var k in utils){
-      fns.push('var ' + k + ' = api.' + k + ';');
+      if(stateful.indexOf(k) !== -1){
+        fns.push('var ' + k +' = api.'+k +'(state);');
+      }else fns.push('var ' + k + ' = api.' + k + ';');
     }
     functionBody = ''+
       fns.join('\n') +  ";\n" +

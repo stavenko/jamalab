@@ -70,6 +70,38 @@
 
 	__webpack_require__(757);
 	__webpack_require__(759);
+	var Plot1 = '\n'
+	+'var section = Section("First");\n'
+	+'\n'
+	+'var dt = Math.pow(10,-3);\n'
+	+'var A = 10;\n'
+	+'var L = 14*dt;\n'
+	+'var S = 10*L;\n'
+	+'var i = sqrt(-1);\n'
+	+'var f0 = -2.5 * Math.pow(10,3);\n'
+	+'var pi = Math.PI;\n'
+	+'\n'
+	+'\n'
+	+'\n'
+	+'function s1(t){\n'
+	    +'if(t < L+S && t > S) return A;\n'
+	    +'return 0;\n'
+	+'}\n'
+	+'\n'
+	+'function s2(t){\n'
+	    +'return mul(s1(t), exp(mul(i,2,pi,f0,t)));\n'
+	+'}\n'
+	+'\n'
+	+'\n'
+	+'section.plot([s1, re(s2)],{start:0, end:0.3, step:0.001});\n'
+	+'\n'
+	+'var fOpts = {from:0, to:1, amount:10}\n'
+	+'\n'
+	+'var S1 = fft(s1,fOpts);\n'
+	+'var S2 = fft(s2,fOpts);\n'
+	+'\n'
+	+'section.plot([absf(arrShift(S1)), absf(S2)], {start:0, end:1, step:0.01});\n'
+
 	var Test1 = 
 	'var section = Section("First");\n'
 	+'section.handle("k");\n'
@@ -68070,18 +68102,46 @@
 	  sub: _multiparamOp(math.subtract),
 	  add:_multiparamOp(math.add),
 	  exp:math.exp,
+	  mod:math.mod,
 
-	  array(a, starts, ends){
-	    return function(i, opts){
-	      if(!(i >= starts && i <= ends)) return 0;
-	      var normalizedIx = (i - starts) / (ends - starts);
-	      var tx = Math.floor(normalizedIx * (a.length)); 
-	      if(tx<0 || tx >= a.length) return 0;
-	      return a[tx];
+	  re:function(f){
+	    return function(t,opts){
+	      var v = f(t,opts);
+	      return v?v.re:null;
 	    }
 	  },
-
-
+	  absf:function(f){
+	    return function(t,opts){
+	      var v = f(t,opts);
+	      return math.abs(v);
+	    }
+	  },
+	  im:function(f){
+	    return function(t,opts){
+	      var v = f(t,opts);
+	      return v?v.im:null;
+	    }
+	  },
+	  arrShift:function(arr, on){
+	    on = on === undefined?  0.5: on;
+	    return function(i, opts){
+	      var size = opts.end - opts.start;
+	      var i = math.mod(i + size * on, size);
+	      return arr(i, opts);
+	      // console.log(i, opts);
+	    }
+	  },
+	  array(state){
+	    return function(a, starts, ends){
+	      return function(i, opts){
+	        if(!(i >= starts && i <= ends)) return 0;
+	        var normalizedIx = (i - starts) / (ends - starts);
+	        var tx = Math.floor(normalizedIx * (a.length)); 
+	        if(tx<0 || tx >= a.length) return 0;
+	        return a[tx];
+	      }
+	    }
+	  },
 	  get:function (ctx, path){
 	    path = path.split('.');
 	    var o = ctx;
@@ -68099,9 +68159,41 @@
 	      o = o[path[i]];
 	    }
 	    o[path[path.length-1]] = v;
-	  }
+	  },
+	  asyncQueue: AsyncQueueOnWay
 	}
 
+	function AsyncQueueOnWay(opts){
+	  opts = opts || {};
+
+	  var fnlist = [];
+	  var isProcessing = false;
+	  return {
+	    add: function(f){
+	      fnlist.push(f);
+	      next();
+	    }
+	  }
+	  function next(){
+	    if(isProcessing) return;
+	    if(!fnlist.length) return;
+	    isProcessing = true;
+
+	    var f;
+	    if (opts.takeLast ){
+	      f = fnlist.pop();
+	      if(!opts.saveQueue)
+	        fnlist = [];
+	      f(finished(next));
+	    }
+	  }
+	  function finished(fn){
+	    return function(){
+	      isProcessing = false;
+	      fn();
+	    }
+	  }
+	}
 	function _multiparamOp(f){
 	  return function(){
 	    var acc = arguments[0];
@@ -120637,10 +120729,11 @@
 	    }
 	}
 
-	function FFT(f, opts, isReverse){
+	function FFT(f, opts, isReverse, state){
 	  var from = opts.from;
 	  var to = opts.to;
 	  var amount = mathjs.pow(2, opts.amount);
+	  var shift = opts.shift || 0.0;
 	  var calculated = false;
 	  if(from > to) return function(){
 	    console.warn("Incorrect range from:", from, "To", to);
@@ -120653,6 +120746,7 @@
 	    var v = f(i);
 	    if(typeof(v) == 'number') v = mathjs.complex(v,0);
 	    output.push(mathjs.complex(v.re, v.im));
+	    if(output.length == amount) break;
 	  }
 
 	  var generate = transformRadix2(output, isReverse);
@@ -120660,21 +120754,31 @@
 	  //   width ~ log n; i,j ~ n
 	  width = 1;
 	  return function(i, opts){
-	    if(!calculated) {
+	    opts = opts || {};
+	    if(!calculated || state.arraysInvalid) {
 	      generate();
 	      calculated = true;
 	    }
 	    if(!(i >= from && i <= to)) return 0;
 	    var normalizedIx = (i - from) / (to - from);
+	    normalizedIx = mathjs.mod(normalizedIx + shift, 1.0);
 	    var tx = Math.floor(normalizedIx * (output.length)); 
 	    if(tx<0 || tx >= output.length) return 0;
 	    return isReverse?mathjs.divide(output[tx], amount): output[tx];
 	  }
 	}
 
-	module.exports.fft = function(input, opts) { return FFT(input, opts, false);}
+	module.exports.fft = function(state){
+	  return function(input, opts) { 
+	    return FFT(input, opts, false, state);
+	  }
+	}
 
-	module.exports.ifft = function(input, opts) { return FFT(input, opts, true);}
+	module.exports.ifft = function(state){
+	  return function(input, opts) { 
+	    return FFT(input, opts, true, state);
+	  }
+	}
 
 
 
@@ -120743,6 +120847,9 @@
 	    set(this.state,  'computationState.sections.'
 	        + e.detail.sectionName + '.handles.'
 	        + e.detail.handle + '.value', parseFloat(e.detail.value));
+	    console.log(this.state.computationState);
+	    this.state.computationState.arraysInvalid = true;
+	    console.log(this.state.computationState);
 	    this.renderValues(e.sectionName);
 	          
 	  },
@@ -120768,16 +120875,16 @@
 	  renderValues(name, plotId) {
 	    var plots = get(this.state, 'computationState.sections.'+name+'.plots') ;
 	    if(plots)
-	      if(plotId) return renderPlot(plots[plotId]);
-	      else return renderPlots(plots);
+	      if(plotId) return renderPlot.bind(this)(plots[plotId]);
+	      else return renderPlots.bind(this)(plots);
 	    for(var k in this.state.computationState.sections){
 	      var section = this.state.computationState.sections[k];
-	      renderPlots(section.plots);
+	      renderPlots.bind(this)(section.plots);
 	    }
 
 	    function renderPlots(plots){
 	      for(var j =0; j < plots.length; j++){
-	        renderPlot(plots[j]);
+	        renderPlot.bind(this)(plots[j]);
 	      }
 	    }
 
@@ -120794,16 +120901,14 @@
 	        console.warn('Too big amount of steps');
 	        return;
 	      }
+	      opts.arraysInvalid = this.state.computationState.arraysInvalid;
 
 	      for(var i =0; i < rows.length; i++){
 	        var row = rows[i];
 	        var counter = 0;
 	        var fn = row.data;
-	        //if(typeof fn !== 'function')
-	        //  fn = utils.arrayGetter(row.data, opts.start, opts.end);
 	        for(var x = opts.start; x < opts.end; x+= opts.step){
 	          row.x[counter] = x;
-
 	          try{
 	            row.y[counter] = fn(x, opts);
 	          }catch(e){
@@ -120812,14 +120917,18 @@
 	          counter ++;
 	        }
 	      }
+	      this.state.computationState.arraysInvalid = false;
 	      emit('redraw-graph');
 	    }
 	  },
 
 	  parseScript: function(javascript){
 	    var fns = [];
+	    var stateful = ['fft','ifft', 'array'];
 	    for(var k in utils){
-	      fns.push('var ' + k + ' = api.' + k + ';');
+	      if(stateful.indexOf(k) !== -1){
+	        fns.push('var ' + k +' = api.'+k +'(state);');
+	      }else fns.push('var ' + k + ' = api.' + k + ';');
 	    }
 	    functionBody = ''+
 	      fns.join('\n') +  ";\n" +
@@ -121003,6 +121112,7 @@
 	  lastRender: Date.now(),
 	  renderOnceIn:2000, // miliseconds
 	  requestedRedraw:false, 
+	  requestQueue:[],
 	  componentDidMount: function(){
 	    this.refresh();
 	    document.addEventListener('redraw-graph', this.refresh);
@@ -121023,34 +121133,45 @@
 	  },
 
 	  refresh: function(){
-	    var now = Date.now();
-	    var diff = now - this.lastRender;
-	    var leftTime = Math.min(Math.abs(this.renderOnceIn - diff), this.renderOnceIn);
-	    var node = ReactDOM.findDOMNode(this);
 	    var that = this;
-	    var arrays = this.getArray();
+	    this.requestQueue.push(draw.bind(this));
+	    if(!this.interval)
+	      this.interval = setInterval(next.bind(this), this.renderOnceIn);
 
-	    if(!this.requestedRedraw) {
-	      this.requestedRedraw = true;
-	      setTimeout(function(){
-	        var layout = {
-	          autosize:true,
-	          width:node.clientWidth,
-	          shapes:[]
-	        }
-	        for(var i =0; i < arrays.length; i++){
-	          var array = arrays[i];
-	          if(array.helpers){
-	            for(var j = 0; j < array.helpers.length; j++){
-	              layout.shapes.push( array.helpers[j] );
-	            }
+	    function draw(){
+	      var arrays = this.getArray();
+	      var node = ReactDOM.findDOMNode(this);
+	      var layout = {
+	        autosize:true,
+	        width:node.clientWidth,
+	        shapes:[]
+	      }
+	      for(var i =0; i < arrays.length; i++){
+	        var array = arrays[i];
+	        if(array.helpers){
+	          for(var j = 0; j < array.helpers.length; j++){
+	            layout.shapes.push( array.helpers[j] );
 	          }
 	        }
-	        Plotly.newPlot(node, arrays, layout);
-	        that.requestedRedraw = false;
-
-	      }, leftTime);
+	      }
+	      Plotly.newPlot(node, arrays, layout);
+	      that.requestedRedraw = false;
 	    }
+	    function next(){
+	      console.log("Try");
+	      if(!this.requestQueue.length) return;
+	      console.log('draw', this.requestQueue);
+	      var f = this.requestQueue.pop();
+	      this.requestQueue=[];
+	      f();
+	    }
+
+
+	    //function next(){
+	      //var now = Date.now();
+	      //var diff = now - this.lastRender;
+	      //var leftTime = Math.min(Math.abs(this.renderOnceIn - diff), this.renderOnceIn);
+	    //}
 	  },
 
 	  render: function(){

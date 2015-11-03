@@ -23,18 +23,46 @@ module.exports = {
   sub: _multiparamOp(math.subtract),
   add:_multiparamOp(math.add),
   exp:math.exp,
+  mod:math.mod,
 
-  array(a, starts, ends){
-    return function(i, opts){
-      if(!(i >= starts && i <= ends)) return 0;
-      var normalizedIx = (i - starts) / (ends - starts);
-      var tx = Math.floor(normalizedIx * (a.length)); 
-      if(tx<0 || tx >= a.length) return 0;
-      return a[tx];
+  re:function(f){
+    return function(t,opts){
+      var v = f(t,opts);
+      return v?v.re:null;
     }
   },
-
-
+  absf:function(f){
+    return function(t,opts){
+      var v = f(t,opts);
+      return math.abs(v);
+    }
+  },
+  im:function(f){
+    return function(t,opts){
+      var v = f(t,opts);
+      return v?v.im:null;
+    }
+  },
+  arrShift:function(arr, on){
+    on = on === undefined?  0.5: on;
+    return function(i, opts){
+      var size = opts.end - opts.start;
+      var i = math.mod(i + size * on, size);
+      return arr(i, opts);
+      // console.log(i, opts);
+    }
+  },
+  array(state){
+    return function(a, starts, ends){
+      return function(i, opts){
+        if(!(i >= starts && i <= ends)) return 0;
+        var normalizedIx = (i - starts) / (ends - starts);
+        var tx = Math.floor(normalizedIx * (a.length)); 
+        if(tx<0 || tx >= a.length) return 0;
+        return a[tx];
+      }
+    }
+  },
   get:function (ctx, path){
     path = path.split('.');
     var o = ctx;
@@ -52,9 +80,41 @@ module.exports = {
       o = o[path[i]];
     }
     o[path[path.length-1]] = v;
-  }
+  },
+  asyncQueue: AsyncQueueOnWay
 }
 
+function AsyncQueueOnWay(opts){
+  opts = opts || {};
+
+  var fnlist = [];
+  var isProcessing = false;
+  return {
+    add: function(f){
+      fnlist.push(f);
+      next();
+    }
+  }
+  function next(){
+    if(isProcessing) return;
+    if(!fnlist.length) return;
+    isProcessing = true;
+
+    var f;
+    if (opts.takeLast ){
+      f = fnlist.pop();
+      if(!opts.saveQueue)
+        fnlist = [];
+      f(finished(next));
+    }
+  }
+  function finished(fn){
+    return function(){
+      isProcessing = false;
+      fn();
+    }
+  }
+}
 function _multiparamOp(f){
   return function(){
     var acc = arguments[0];

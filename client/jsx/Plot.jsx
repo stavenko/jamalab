@@ -5,6 +5,7 @@ var Plot = React.createClass({
   lastRender: Date.now(),
   renderOnceIn:2000, // miliseconds
   requestedRedraw:false, 
+  requestQueue:[],
   componentDidMount: function(){
     this.refresh();
     document.addEventListener('redraw-graph', this.refresh);
@@ -25,34 +26,45 @@ var Plot = React.createClass({
   },
 
   refresh: function(){
-    var now = Date.now();
-    var diff = now - this.lastRender;
-    var leftTime = Math.min(Math.abs(this.renderOnceIn - diff), this.renderOnceIn);
-    var node = ReactDOM.findDOMNode(this);
     var that = this;
-    var arrays = this.getArray();
+    this.requestQueue.push(draw.bind(this));
+    if(!this.interval)
+      this.interval = setInterval(next.bind(this), this.renderOnceIn);
 
-    if(!this.requestedRedraw) {
-      this.requestedRedraw = true;
-      setTimeout(function(){
-        var layout = {
-          autosize:true,
-          width:node.clientWidth,
-          shapes:[]
-        }
-        for(var i =0; i < arrays.length; i++){
-          var array = arrays[i];
-          if(array.helpers){
-            for(var j = 0; j < array.helpers.length; j++){
-              layout.shapes.push( array.helpers[j] );
-            }
+    function draw(){
+      var arrays = this.getArray();
+      var node = ReactDOM.findDOMNode(this);
+      var layout = {
+        autosize:true,
+        width:node.clientWidth,
+        shapes:[]
+      }
+      for(var i =0; i < arrays.length; i++){
+        var array = arrays[i];
+        if(array.helpers){
+          for(var j = 0; j < array.helpers.length; j++){
+            layout.shapes.push( array.helpers[j] );
           }
         }
-        Plotly.newPlot(node, arrays, layout);
-        that.requestedRedraw = false;
-
-      }, leftTime);
+      }
+      Plotly.newPlot(node, arrays, layout);
+      that.requestedRedraw = false;
     }
+    function next(){
+      console.log("Try");
+      if(!this.requestQueue.length) return;
+      console.log('draw', this.requestQueue);
+      var f = this.requestQueue.pop();
+      this.requestQueue=[];
+      f();
+    }
+
+
+    //function next(){
+      //var now = Date.now();
+      //var diff = now - this.lastRender;
+      //var leftTime = Math.min(Math.abs(this.renderOnceIn - diff), this.renderOnceIn);
+    //}
   },
 
   render: function(){
