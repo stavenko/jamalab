@@ -1,23 +1,31 @@
 var React= require('react');
+var hash = require('jshashes');
 var t = require('tcomb-form');
 var Form = t.form.Form;
+var HTTP = require('../http.jsx');
 
+
+var SHA1 = new hash.SHA1;
+var serverError;
 
 function SamePasswords(v){
   return v.password === v.password_confirm;
 }
+
 var Register = t.subtype(t.struct({
   email: t.String,
   password: t.String,
   password_confirm:t.String
+
 }), SamePasswords)
 
 var options={
   auto: 'placeholders',
   error: function(value){
-    console.log("EEE", value);
     if(!SamePasswords(value))
       return "Passwords do not match";
+    if(serverError) return serverError;
+
   },
   fields:{
     password_confirm:{
@@ -40,9 +48,24 @@ module.exports = React.createClass({
   onChange(value){
     this.setState({value});
   },
+  getError(error){
+    switch(error.code){
+        case 11000: return 'Login exists';
+        default: return 'Unknown error';
+    }
+  },
   onClick(){
-    var val = this.refs.form.getValue(true);
-    console.log(val);
+    var val = this.refs.form.getValue();
+    if(!val) return;
+    HTTP.auth.register({
+      email:val.email,
+      password: SHA1.hex(val.password)
+    }, (e)=>{ 
+      if(!e.error) return this.props.router.nav('login'); 
+      if(e.error.code) serverError = this.getError(e.error);
+      else serverError = e.error.message;
+      this.refs.form.refs.input.setState({hasError: true})
+    });
   },
   render(){
     return <div> 
@@ -53,7 +76,8 @@ module.exports = React.createClass({
         value = {this.state.value}
         onChange={this.onChange}
       />
-      <a className='btn btn-primary' onClick ={this.onClick }>Save </a>
+      <a className='btn btn-primary' onClick ={this.onClick }> Register </a>
+
     </div>
   }
 

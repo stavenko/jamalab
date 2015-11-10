@@ -1,6 +1,6 @@
 var React= require('react');
-var utils = require('./utils.js');
-var dom = require('./dom.js');
+var utils = require('../utils.js');
+var dom = require('../dom.js');
 
 var get = utils.get;
 var set = utils.set;

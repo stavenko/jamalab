@@ -14,6 +14,18 @@ var UserSchema = new mongoose.Schema({
   },
 });
 
+var ScriptSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: true
+  },
+  content: {
+    type: String,
+    required: false
+  },
+});
+
 module.exports={
-  user:mongoose.model('user', UserSchema)
+  user:mongoose.model('user', UserSchema),
+  script:mongoose.model('script', ScriptSchema)
 }

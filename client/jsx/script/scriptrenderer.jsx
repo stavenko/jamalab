@@ -1,8 +1,8 @@
 var React= require('react');
-var utils = require('./utils.js');
-var dom = require('./dom.js');
+var utils = require('../utils.js');
+var dom = require('../dom.js');
 var Handle = require('./handleRenderer.jsx');
-var Plot=require('./Plot.jsx');
+var Plot=require('../Plot.jsx');
 
 var get = utils.get;
 var set = utils.set;

@@ -2,10 +2,10 @@
 var ReactDOM = require('react-dom');
 var React= require('react');
 var brace= require('brace');
-var AceEditor  = require('react-ace');
 var moment = require('moment');
 var utils = require('./utils.js');
 var dom = require('./dom.js');
+var AceEditor  = require('react-ace');
 var SectionsRender = require('./scriptrenderer.jsx');
 
 var get = utils.get;

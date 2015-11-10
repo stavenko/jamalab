@@ -1,40 +1,43 @@
 var HTTP = {
   json:function(url, data, fn){
     var xhr = new XMLHttpRequest();
-    var params = [];
-    for(var k in data) {
-      params.push(k + '=' + JSON.stringify(data[k]));
-    }
 
-    if(params.length) url += '?' +params.join('&');
+    url += '?q=' + JSON.stringify(data)
 
     xhr.open('GET', url, true);
     xhr.onload = function(){
       if(xhr.status == 200)
         return fn(JSON.parse(xhr.responseText));
-      fn({ error: xhr.responseText })
+      fn({ error: xhr.responseText, status: xhr.status })
     }
     xhr.send();
   },
 
-  post: function(url, data, fn){
+  http: function(method, url, data, fn){
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', url, true);
+    xhr.open(method, url, true);
     xhr.onload = function(){
-      fn(JSON.parse(xhr.responseText));
+      if(xhr.status == 200)
+        return fn(JSON.parse(xhr.responseText));
+      fn({ error: xhr.responseText, status: xhr.status })
     }
     xhr.setRequestHeader("Content-Type", 'application/json');
     var fd = new FormData();
-    for(var k in data){
-      fd.append(k, data[k]);
-    }
     xhr.send(JSON.stringify(data));
 
   },
 
+  put: function(url, data, fn){
+    this.http('PUT', url, data, fn);
+  },
+
+  post: function(url, data, fn){
+    this.http('POST', url, data, fn);
+  },
+
   crud:{
     list(model, params, fn){
-      HTTP.json("/crud/read/"+model +'/',  params, fn);
+      HTTP.json("/api/"+model +'/',  params, fn);
     },
 
     remove:function(model, id, fn){
@@ -43,9 +46,9 @@ var HTTP = {
 
     save(model, params, fn){
       if( params._id )
-        HTTP.post('/crud/update/' + model + '/' + params._id + '/', params, fn);
+        HTTP.put('/api/' + model + '/', params, fn);
       else
-        HTTP.post("/crud/create/" + model + "/", params, fn);
+        HTTP.post("/api/" + model + "/", params, fn);
     }
   },
 

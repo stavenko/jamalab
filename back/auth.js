@@ -8,8 +8,8 @@ passport.use(new LocalStrategy({
 }, function(username, password,done){
   models.user.findOne({ email : username},function(err,user){
     if(err) return done(err);
-    if(!user) return done(null, false, {message:'wrong username' })
-    if(user.password !== password) return done(null, false, {message:'wrong password' })
+    if(!user) return done(null, false, 'Wrong username')
+    if(user.password !== password) return done(null, false, 'Wrong password')
     done(null, user)
   });
 }));
@@ -44,11 +44,19 @@ module.exports.init = function(app, server){
              if(req.user)
                return res.send(JSON.stringify(req.user));
              return res.send(JSON.stringify({}));
-           })
+           });
+
   app.post("/auth/login/", 
-           passport.authenticate('local',{failureredirect:'/login/'}),
-           function(req, res){
-             res.send(JSON.stringify( {login:'ok'} ));
-           })
+           function(req, res, next){
+             passport.authenticate('local', function(err, user, info) {
+               if(err) return next(err);
+               if(user)
+                 req.logIn(user, function(err){
+                   if(err) return next(err);
+                   res.send(JSON.stringify( {login:'ok'} ));
+                 });
+               else res.status(200).json({ error: info });
+             })(req, res, next)
+           });
 }
 
