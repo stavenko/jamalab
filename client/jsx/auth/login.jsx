@@ -13,6 +13,7 @@ var Login = t.struct({
 });
 
 var loginError;
+
 var options = {
   auto:'placeholders',
   error: function(v){
@@ -33,7 +34,9 @@ module.exports = React.createClass({
       password: ''
     }
   },
+
   onChange(value){ this.setState({value}); loginError = false; },
+
   login(){
     var value = this.refs.form.getValue();
     
@@ -44,20 +47,24 @@ module.exports = React.createClass({
       if(!e.error) return  this.props.router.nav('/scripts/');
       loginError = e.error;
       this.refs.form.refs.input.setState({ hasError: true });
-
     })
   },
+
   render(){
-    return <div> 
-      <Form 
-        ref='form'
-        type={Login}
-        options={options}
-        value = {this.state.value}
-        onChange={this.onChange}
-      />
-      <a onClick={this.login} className='btn btn-primary'> Login </a> 
-      <Link to='/register' cls='btn'> Go to registration </Link> 
+    return <div className='container'> 
+      <div className='row'>
+        <div className='col-xs-12'>
+          <Form 
+            ref='form'
+            type={Login}
+            options={options}
+            value = {this.state.value}
+            onChange={this.onChange}
+          />
+          <a onClick={this.login} className='btn btn-primary'> Login </a> 
+          <Link to='/register' cls='btn'> Go to registration </Link> 
+        </div>
+      </div>
 
     </div>
   }

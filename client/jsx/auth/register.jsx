@@ -35,7 +35,8 @@ var options={
       type:'password',
     }
   }
-}
+};
+
 module.exports = React.createClass({
   getInitialState(){
 
@@ -45,15 +46,18 @@ module.exports = React.createClass({
       password_confirm:'',
     }
   },
+
   onChange(value){
     this.setState({value});
   },
+
   getError(error){
     switch(error.code){
         case 11000: return 'Login exists';
         default: return 'Unknown error';
     }
   },
+
   onClick(){
     var val = this.refs.form.getValue();
     if(!val) return;
@@ -67,6 +71,7 @@ module.exports = React.createClass({
       this.refs.form.refs.input.setState({hasError: true})
     });
   },
+
   render(){
     return <div> 
       <Form 
@@ -77,10 +82,8 @@ module.exports = React.createClass({
         onChange={this.onChange}
       />
       <a className='btn btn-primary' onClick ={this.onClick }> Register </a>
-
     </div>
   }
-
 })
 
 

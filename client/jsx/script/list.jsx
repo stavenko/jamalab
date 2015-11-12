@@ -62,31 +62,42 @@ module.exports = React.createClass({
         value={this.state.newValue}
         onChange = {this.onChange }
       />
-      <a className='btn btn-primary' onClick={this.create}> Create</a>
-      <a className='btn' onClick={this.cancel}> Cancel</a>
+          <a className='btn btn-primary' onClick={this.create}> Create</a>
+          <a className='btn' onClick={this.cancel}> Cancel</a>
     </div>
 
   },
 
   renderItem(item){
-    return <div key={item._id}> 
-      <Link to={"/scripts/" +item._id} > {item.name}</Link> 
+    return <div key={item._id} className="col-xs-2"> 
+      <div className='well'>
+        <Link to={"/scripts/" +item._id} > {item.name}</Link> 
+      </div>
     </div>
   },
 
   render(){
     var newButton = this.state.isFormVisible?
                     '':
-                    <a onClick={this.createNew}> Create new script </a>
+                    <a onClick={this.createNew} className='btn btn-primary'> Create new script </a>
     var form = this.state.isFormVisible?this.renderForm():'';
       
 
-    return <div> 
+    return <div className ='container'> 
+      <div className='row'>
+        <div className ='col-xs-12'> 
+          <h2> You have scripts </h2>
+        </div>
+      </div>
       <div>
         { this.state.items.map(item=>this.renderItem(item) )}
       </div>
-      {newButton}
-      {form}
+      <div className ='row'>
+        <div className='col-xs-6'>
+          {form}
+          {newButton}
+        </div>
+      </div>
     </div>
   }
 

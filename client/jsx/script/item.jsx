@@ -23,7 +23,6 @@ module.exports = React.createClass({
     }
   },
   componentDidMount(){
-    console.log(this.props);
     HTTP.crud.list('scripts',{_id:this.props.itemId}, 
                    (r)=>{
                      this.setState({ item: r.data[0] })

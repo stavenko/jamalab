@@ -16,34 +16,34 @@ var App = Backbone.Router.extend({
     'scripts/:id':'script'
   },
 
-  scripts(){
+  scripts() {
     this.render(<ScriptsList router={this} />);
   },
 
-  script(id){
+  script(id) {
     this.render(<Script itemId={id} router={this} />);
   },
 
-  checkLogin(){
+  checkLogin() {
     HTTP.auth.ask.isLoggedIn((e)=>{
       if(!e._id) this.nav('/login');
       else this.nav('/scripts');
     });
   },
 
-  register(){
+  register() {
     this.render(<Register router={this} />);
   },
 
-  login(){
+  login() {
     this.render(<Login router={this} />);
   },
 
-  nav(url){
+  nav(url) {
     this.navigate(url, {trigger: true});
   },
 
-  render(C){
+  render(C) {
     ReactDOM.render(C, document.getElementById('content'));
   }
   
